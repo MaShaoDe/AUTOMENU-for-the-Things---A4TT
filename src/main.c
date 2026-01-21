@@ -14,6 +14,8 @@
 #include "config.h"
 #include "io.h"
 
+menu_t main_menu;
+
 /* startup modes */
 typedef enum {
     STARTUP_NORMAL = 0,
@@ -118,4 +120,3 @@ int main(int argc, char *argv[])
 
     return exit_code;
 }
-
