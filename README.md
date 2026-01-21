@@ -1,169 +1,106 @@
-# AUTOMENU for the Things A4TT
+# Automenu for the Things
 
-Automenu for the Things is a platform-independent, text-based menu system for technical devices and systems.  
-It provides a consistent user interface over serial consoles, Telnet connections and classic Unix terminals, without web servers, browsers or graphical user interfaces.
+Automenu for the Things is a small, portable, text-based menu system designed for embedded devices and Unix-like systems.
 
-The project is inspired by classic Auto-Menu systems and traditional Unix tools, but implemented with a clean and modern architecture.
+It provides a consistent, character-based user interface over serial consoles, Telnet connections and terminal sessions, without relying on graphical interfaces, web technologies or heavy frameworks.
 
----
+Automenu is inspired by classic Automenu systems and Unix tools, focusing on clarity, predictability and long-term maintainability.
 
-## Motivation
+## Key Characteristics
 
-Many devices and tools require simple and reliable interfaces for:
+* text-based menu system
+* identical behavior across platforms
+* serial, Telnet and terminal operation
+* human-readable configuration
+* strong recovery mechanisms
+* no web UI, no browser dependencies
 
-- configuration
-- status display
-- debugging
-- maintenance
-- control
+## Supported Environments
 
-Web-based interfaces are often unnecessarily complex, resource-heavy and short-lived.  
-Automenu focuses instead on clarity, keyboard control and minimal dependencies.
+Automenu is designed to run on:
 
----
+* embedded systems (ESP32)
+* FreeBSD
+* Linux
+* macOS
 
-## Core Principles
+The same core logic is used on all platforms. Platform-specific code is limited to input and output handling.
 
-- Identical look and behavior across all platforms
-- Strict separation of rendering, logic and configuration
-- Menu structure fully driven by configuration files
-- No security logic at menu level
-- Configuration is visible, editable and recoverable
-- Everything can be repaired, nothing is permanently broken
+## Design Goals
 
-If you have terminal access, you are considered authorized.
+Automenu aims to:
 
----
+* provide simple and reliable menu navigation
+* avoid graphical user interfaces
+* avoid web servers and browser-based configuration
+* remain debuggable with standard Unix tools
+* ensure that misconfiguration is always recoverable
 
-## Supported Platforms
+Automenu deliberately avoids feature bloat and unnecessary abstraction.
 
-- ESP32 via serial console
-- ESP32 via Telnet
-- macOS terminal
-- Linux terminal
-- FreeBSD terminal
+## Documentation
 
-All platforms use the same core engine. Differences exist only in the IO layer.
+The complete technical documentation is located in the `docs/` directory.
 
----
+* `docs/spec.md` – technical specification and architecture
+* `docs/design.md` – design rationale and guiding principles
+* `docs/configuration.md` – configuration system and file formats
+* `docs/display_profiles.md` – display profiles and color handling
+* `docs/startup_and_recovery.md` – startup parameters and recovery paths
+* `docs/build_and_install.md` – build and installation instructions
+* `docs/portability.md` – platform portability considerations
+* `docs/manpages.md` – manual page overview
+* `docs/roadmap.md` – development roadmap
 
-## Architecture Overview
+## Build and Install
 
-Automenu is built from four clearly separated layers:
+On Unix-like systems, Automenu is built using a traditional make-based workflow:
 
-1. IO Abstraction  
-   Serial, Telnet, stdin and stdout
+```
+make
+sudo make install
+```
 
-2. Core Engine  
-   Navigation, state handling, menu stack, paging
+Installation paths follow standard Unix conventions and integrate cleanly with FreeBSD Ports, Homebrew and MacPorts.
 
-3. Renderer  
-   Layout, frames, colors, status lines
-
-4. Configuration  
-   Menu structure and display configuration are separate
-
-No platform knows UI details.  
-No renderer knows platform specifics.
-
----
-
-## Menu System
-
-- Menus are generated automatically from configuration files
-- Support for submenus and actions
-- Automatic paging for long menus
-- Consistent keyboard navigation
-- Actions always return using the SPACE key
-- State handling based on a stack model
-
-Actions are logically separated from rendering.
-
----
+Detailed instructions are available in `docs/build_and_install.md`.
 
 ## Configuration
 
-At least two configuration files are used:
+Automenu uses human-readable configuration files to define menu structure and display behavior.
 
-- Menu configuration  
-  Defines which menus and functions exist
+Configuration can be:
 
-- Display configuration  
-  Defines colors, profiles and rendering behavior
+* edited manually
+* modified through the Automenu interface
+* reset to factory defaults at any time
 
-A factory default configuration always exists as a recovery anchor.
+Broken configurations are preserved and never silently discarded.
 
-When saving changes, the existing user configuration is automatically backed up as `.bak`.
+See `docs/configuration.md` for details.
 
----
+## Startup and Recovery
 
-## Display Profiles
+Automenu provides explicit startup parameters and recovery modes to ensure the system is always usable.
 
-Automenu supports predefined display profiles, for example:
+Recovery features include:
 
-- VT100 Green
-- Amber Terminal
-- Classic Mono
-- Modern Auto
-
-Profiles define background, text colors and highlights.  
-Colors can be forced or aligned with terminal defaults.
-
----
-
-## Configuration via Menu
-
-All relevant settings can be modified directly inside Automenu:
-
-- Change values
-- Enable or disable options
-- Switch display profiles
-- Save or discard configuration
-
-No artificial restrictions are imposed.
-
----
-
-## The Way Out
-
-Anything that can be broken from inside the menu must be repairable from outside.
-
-Automenu therefore supports startup parameters that always take precedence:
-
-- `--default` or `--factory`
-- `--reset`
-- `--config`
-- `--safe`
-- `--profile <name>`
+* factory reset
+* safe mode (ASCII-only rendering)
+* forced display profiles
+* direct configuration access
 
 These mechanisms cannot be disabled by configuration.
 
-On embedded systems, equivalent boot or input triggers are provided.
+See `docs/startup_and_recovery.md` for details.
 
----
+## Status
 
-## Unix Integration
+Automenu for the Things is in early development.
 
-Automenu is a classic Unix-style tool:
-
-- Source-based
-- `make`, `make install`, `make clean`
-- FreeBSD port
-- macOS installation via Homebrew or MacPorts
-- Man pages as the primary documentation
-
-Man pages form the complete technical manual.
-
----
-
-## Project Status
-
-The project is in early development.  
-The goal is a stable, minimal core with clear documentation.
-
----
+The documentation represents a stabilized conceptual foundation. Implementation work proceeds incrementally, guided by the specification.
 
 ## License
 
-To be defined.  
-A permissive open-source license is intended.
+The license for this project is documented in the `LICENSE` file.
+
