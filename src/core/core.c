@@ -4,73 +4,115 @@
 //
 //  Created by Marcel Sauder on 21.01.2026.
 //
-
-#include <stdio.h>
+#include <string.h>
 #include "core.h"
-#include "io.h"
-#include "menu.h"
+#include <stdlib.h>
+#include <stdbool.h>
 
-/*
- * Minimal core loop.
- * Version 0.1.0: read keys until 'q' is pressed.
- */
-static int menu_index_from_key(int ch, size_t item_count)
+
+struct core {
+    const menu_t *menus;
+    size_t menu_count;
+
+    const menu_t *current_menu;
+    size_t current_index;
+
+    const char *pending_action;
+};
+
+void core_init(core_t *core)
 {
-    if (ch < '1' || ch > '9') {
-        return -1;
-    }
-
-    int index = (ch - '1');
-
-    if ((size_t)index >= item_count) {
-        return -1;
-    }
-
-    return index;
+    memset(core, 0, sizeof(*core));
 }
 
-int core_run(automenu_context_t *ctx)
+static const menu_t *find_menu(const core_t *core, const char *id)
 {
-    (void)ctx;
-    
-    extern menu_t main_menu;
-
-    menu_render(&main_menu);
-
-    printf("Press keys, 'q' to quit:\n");
-    fflush(stdout);
-
-    while (1) {
-        int ch = io_read_key();
-
-        if (ch < 0) {
-            break;
+    for (size_t i = 0; i < core->menu_count; i++) {
+        if (strcmp(core->menus[i].id, id) == 0) {
+            return &core->menus[i];
         }
+    }
+    return NULL;
+}
 
-        if (ch == 'q') {
-            printf("Quit requested\n");
-            fflush(stdout);
-            break;
+int core_load(core_t *core,
+               const menu_t *menus,
+               size_t menu_count,
+               const char *start_menu_id)
+{
+    core->menus = menus;
+    core->menu_count = menu_count;
+    core->current_menu = find_menu(core, start_menu_id);
+    core->current_index = 0;
+    core->pending_action = NULL;
+
+    return core->current_menu != NULL;
+}
+
+void core_input(core_t *core, core_event_t event)
+{
+    if (!core->current_menu) return;
+
+    if (event == CORE_EVENT_UP) {
+        if (core->current_index > 0)
+            core->current_index--;
+    } else if (event == CORE_EVENT_DOWN) {
+        if (core->current_index + 1 < core->current_menu->item_count)
+            core->current_index++;
+    } else if (event == CORE_EVENT_SELECT) {
+        core_select_index(core, core->current_index);
+    }
+}
+
+void core_select_index(core_t *core, size_t index)
+{
+    if (!core->current_menu) return;
+    if (index >= core->current_menu->item_count) return;
+
+    const menu_item_t *item = &core->current_menu->items[index];
+
+    if (item->action_id) {
+        core->pending_action = item->action_id;
+    } else if (item->submenu_id) {
+        const menu_t *submenu = find_menu(core, item->submenu_id);
+        if (submenu) {
+            core->current_menu = submenu;
+            core->current_index = 0;
         }
+    }
+}
 
-        int index = menu_index_from_key(ch, main_menu.item_count);
+const menu_view_t *core_get_current_menu(const core_t *core)
+{
+    static menu_view_t view;
 
-        if (index >= 0) {
-            menu_item_t *item = &main_menu.items[index];
+    if (!core->current_menu) return NULL;
 
-            printf("Selected item %d: %s\n",
-                   index + 1,
-                   item->label);
-            fflush(stdout);
+    view.id = core->current_menu->id;
+    view.title = core->current_menu->title;
+    view.items = core->current_menu->items;
+    view.item_count = core->current_menu->item_count;
+    view.current_index = core->current_index;
 
-            if (item->type == MENU_ITEM_ACTION && item->action) {
-                item->action();
-            }
-        } else {
-            printf("Invalid selection\n");
-            fflush(stdout);
-        }
-        }
+    return &view;
+}
 
-    return 0;
+const char *core_poll_action(core_t *core)
+{
+    const char *a = core->pending_action;
+    core->pending_action = NULL;
+    return a;
+}
+core_t *core_create(void)
+{
+    core_t *core = malloc(sizeof(*core));
+    if (!core) return NULL;
+
+    core_init(core);
+    return core;
+}
+
+void core_destroy(core_t *core)
+{
+    free(core);
 }

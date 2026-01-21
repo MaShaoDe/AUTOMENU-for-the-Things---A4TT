@@ -1,0 +1,12 @@
+menu main "Main soso Menu"
+  item "Füdli"    action about
+  item "Settings" submenu settings
+
+menu settings "Settings"
+  item "Resetti" action reset
+  item "Back"  action back
+
+menu main "Puffy Menu"
+  item "About" action about
+  item "Settings" submenu settings
+  item "Test" action test

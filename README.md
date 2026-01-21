@@ -1,107 +1,82 @@
 # Automenu for the Things
 ### by Marcel Sauder 2026
 
-Automenu for the Things is a small, portable, text-based menu system designed for embedded devices and Unix-like systems.
+Automenu ist ein kleines, deterministisches Menüsystem für Terminal- und Embedded-Umgebungen.
 
-It provides a consistent, character-based user interface over serial consoles, Telnet connections and terminal sessions, without relying on graphical interfaces, web technologies or heavy frameworks.
+Im Zentrum steht ein plattformunabhängiger Core, der als Zustandsmaschine arbeitet. Der Core verarbeitet Eingabeereignisse und stellt den aktuellen Menüzustand sowie ausgelöste Aktionen bereit. Darstellung, Eingabe, IO und Konfigurationsformate liegen bewusst ausserhalb des Cores und werden über Adapter umgesetzt.
 
-Automenu is inspired by classic Automenu systems and Unix tools, focusing on clarity, predictability and long-term maintainability.
+Das Projekt ist so aufgebaut, dass der Core testbar, vorhersagbar und unabhängig von der Zielplattform bleibt.
 
-## Key Characteristics
+## Eigenschaften
 
-* text-based menu system
-* identical behavior across platforms
-* serial, Telnet and terminal operation
-* human-readable configuration
-* strong recovery mechanisms
-* no web UI, no browser dependencies
+Automenu bietet einen klar getrennten Menü-Core ohne Abhängigkeiten von Terminal, Hardware oder Betriebssystem. Submenüs werden unterstützt, Aktionen werden über eindeutige Kennungen ausgelöst. Navigation ist sowohl über Cursorbewegung als auch über direkte Indexauswahl möglich. Der Core enthält keine IO Logik, kein Rendering und keinen Parser.
 
-## Supported Environments
+## Projektstruktur
 
-Automenu is designed to run on:
+include/core.h  
+Öffentliche Core API
 
-* embedded systems (ESP32)
-* FreeBSD
-* Linux
-* macOS
+src/core/core.c  
+Implementierung des Menü-Cores
 
-The same core logic is used on all platforms. Platform-specific code is limited to input and output handling.
+src/core/core_test.c  
+Verifikationstest für den Core (Phase A)
 
-## Design Goals
+src/menu.c  
+Definition der Menü-Datenstrukturen
 
-Automenu aims to:
+src/terminal.c  
+Minimaler Terminal-Adapter (Phase B)
 
-* provide simple and reliable menu navigation
-* avoid graphical user interfaces
-* avoid web servers and browser-based configuration
-* remain debuggable with standard Unix tools
-* ensure that misconfiguration is always recoverable
+## Build
 
-Automenu deliberately avoids feature bloat and unnecessary abstraction.
+Minimaler Build ohne Buildsystem für den Terminal-Adapter:
 
-## Documentation
+cc -Iinclude src/core/core.c src/menu.c src/terminal.c -o automenu
 
-The complete technical documentation is located in the `docs/` directory.
+## Start
 
-* `docs/spec.md` – technical specification and architecture
-* `docs/design.md` – design rationale and guiding principles
-* `docs/configuration.md` – configuration system and file formats
-* `docs/display_profiles.md` – display profiles and color handling
-* `docs/startup_and_recovery.md` – startup parameters and recovery paths
-* `docs/build_and_install.md` – build and installation instructions
-* `docs/portability.md` – platform portability considerations
-* `docs/manpages.md` – manual page overview
-* `docs/roadmap.md` – development roadmap
+./automenu
 
-## Build and Install
+## Bedienung im Terminal
 
-On Unix-like systems, Automenu is built using a traditional make-based workflow:
+w bewegt den Cursor nach oben  
+s bewegt den Cursor nach unten  
+Enter selektiert den aktuellen Menüpunkt  
+1 bis 9 selektieren Menüpunkte direkt  
+q beendet das Programm
 
-```
-make
-sudo make install
-```
+Aufgrund der zeilenweisen Terminaleingabe werden w und s jeweils mit Enter bestätigt.
 
-Installation paths follow standard Unix conventions and integrate cleanly with FreeBSD Ports, Homebrew and MacPorts.
+## Core Verifikation
 
-Detailed instructions are available in `docs/build_and_install.md`.
+Der Core wurde unabhängig vom Terminal-Adapter getestet.
 
-## Configuration
+Build und Ausführung des Verifikationstests:
 
-Automenu uses human-readable configuration files to define menu structure and display behavior.
+cc -Iinclude src/core/core.c src/menu.c src/core/core_test.c -o core_test  
+./core_test
 
-Configuration can be:
+Der Test bestätigt korrektes Laden der Menüs, Navigation, Submenüwechsel, Aktionsauslösung und deterministisches Verhalten.
 
-* edited manually
-* modified through the Automenu interface
-* reset to factory defaults at any time
+## Architektur
 
-Broken configurations are preserved and never silently discarded.
+Der Core ist eine reine Zustandsmaschine. Er enthält keine Annahmen über Eingabegeräte, Darstellung oder Plattformen. Alle plattformspezifischen Aspekte werden ausschliesslich in Adaptern umgesetzt.
 
-See `docs/configuration.md` for details.
+Details zur Architektur sind in ARCHITECTURE.md dokumentiert.
 
-## Startup and Recovery
+## Konfiguration
 
-Automenu provides explicit startup parameters and recovery modes to ensure the system is always usable.
+Menüs werden dem Core als Datenstrukturen übergeben. Externe Konfigurationsformate und Parser sind nicht Teil von Version v0.1.0.
 
-Recovery features include:
+Die Spezifikation des Konfigurationsmodells befindet sich in CONFIGURATION.md.
 
-* factory reset
-* safe mode (ASCII-only rendering)
-* forced display profiles
-* direct configuration access
+## Projektstatus
 
-These mechanisms cannot be disabled by configuration.
+Der Core ist stabil, die Architektur ist eingefroren, der Terminal-Adapter ist funktionsfähig. Der aktuelle Stand entspricht Version v0.1.0.
 
-See `docs/startup_and_recovery.md` for details.
+Der detaillierte Status ist in STATUS.md dokumentiert.
 
-## Status
+## Lizenz
 
-Automenu for the Things is in early development.
-
-The documentation represents a stabilized conceptual foundation. Implementation work proceeds incrementally, guided by the specification.
-
-## License
-
-The license for this project is documented in the `LICENSE` file.
-
+Siehe LICENSE.
