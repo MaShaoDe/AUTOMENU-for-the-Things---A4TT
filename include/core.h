@@ -1,7 +1,6 @@
 //
 //  core.h
 //  
-//
 //  Created by Marcel Sauder on 21.01.2026.
 //
 /*
@@ -19,9 +18,6 @@
 #include <stddef.h>
 #include "menu.h"
 
-/*
- * Core opaque type
- */
 typedef struct core core_t;
 
 /*
@@ -75,5 +71,15 @@ const menu_view_t *core_get_current_menu(const core_t *core);
  * Action polling
  */
 const char *core_poll_action(core_t *core);
+
+/*
+ * Exit handling
+ */
+int core_should_exit(core_t *core);
+
+/*
+ * Info handling
+ */
+const char *core_poll_info(core_t *core);
 
 #endif

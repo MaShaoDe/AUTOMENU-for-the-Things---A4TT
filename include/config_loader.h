@@ -4,7 +4,6 @@
 //
 //  Created by Marcel Sauder on 21.01.2026.
 //
-
 #ifndef CONFIG_LOADER_H
 #define CONFIG_LOADER_H
 

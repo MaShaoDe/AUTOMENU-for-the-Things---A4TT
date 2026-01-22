@@ -2,159 +2,162 @@
 
 ## Automenu – Architecture Status v0.1.0
 ### by Marcel Sauder 2026
-### Purpose
 
-Automenu is a platform-neutral menu and control framework designed for
-embedded systems and terminal environments.
+## Purpose
+This document describes the architecture of Automenu and the design decisions behind it.
 
-The system follows a strict separation of concerns to ensure clarity,
-predictability and long-term maintainability.
+Automenu is intentionally built as a small, deterministic framework. Its architecture prioritises clarity, predictability and portability over feature density.
 
-The core is intentionally small, deterministic and free of platform
-assumptions.
+## Design Principles
 
----
+Automenu follows a strict set of principles:
 
-## Architectural Overview
+- deterministic behaviour
+- clear separation of responsibilities
+- no hidden side effects
+- no implicit platform assumptions
+- configuration is data, not logic
 
-Automenu consists of three strictly separated layers:
+These principles ensure that the core can be reused unchanged across very different environments, from desktop terminals to embedded systems.
 
-1. Core
-2. Adapters
-3. Configuration
+## High-Level Overview
 
-No layer depends on the internal implementation details of another.
+Automenu is composed of four main parts:
 
----
+- Core
+- Configuration Loader
+- Adapters
+- Action Dispatcher
 
-## 1. Core
+Each part has a clearly defined responsibility and does not overlap with the others.
 
-The Core is the heart of Automenu and is fully platform-independent.
+## Core
 
-The Core is responsible for:
-- Managing menu structures
-- Managing the current selection state
-- Handling navigation within a menu
-- Triggering actions by identifier
+The core is a pure state machine.
 
-The Core explicitly does **not** know about:
-- Displays
-- Terminals
-- Keyboards
-- Buttons
-- GPIO
-- Operating systems
-- Filesystems
+It is responsible for:
 
-The Core processes only abstract input events such as:
-- up
-- down
-- select
-- back
+- holding the menu structure
+- tracking the current menu and selection
+- handling navigation events
+- managing the menu stack
+- exposing triggered actions and informational events
+- signalling a requested program exit
 
-The Core never performs rendering and never reads input directly.
+The core deliberately does **not**:
 
----
+- read input
+- render output
+- access the filesystem
+- parse configuration files
+- perform any system-level actions
 
-## 2. Adapters
+The core operates exclusively on structured data and input events. This makes it deterministic, easy to test and independent of the target platform.
 
-Adapters connect the Core to the outside world.
+## Menu Model
 
-There are two primary adapter types.
+Menus consist of typed menu items. Each menu item has an explicit semantic meaning.
 
-### Display Adapters
+Supported menu item types in v0.1.0 are:
 
-Examples:
-- Terminal output
-- Framebuffer
-- OLED
-- TFT
-- Serial output
+- `action`  
+  Triggers an action identified by a string ID.
 
-Responsibilities:
-- Render the current menu state
-- Highlight the active selection
-- Display titles and menu entries
+- `submenu`  
+  Switches to another menu.
 
-Display adapters do not manage navigation state.
-All state remains in the Core.
+- `back`  
+  Returns to the previous menu on the stack.
 
-### Input Adapters
+- `exit`  
+  Requests a controlled program termination.
 
-Examples:
-- Keyboard
-- Rotary encoder
-- Buttons
-- Serial input
-- SSH session
+- `info`  
+  Displays informational text without changing menu state.
 
-Responsibilities:
-- Translate physical or logical input into Core events
+Each type is handled explicitly by the core. There is no implicit or fallback behaviour.
 
-Input adapters may be stateless or minimally stateful.
-Navigation logic always remains in the Core.
+## Configuration Loader
 
----
+The configuration loader is responsible for transforming a text-based menu definition into structured menu data.
 
-## 3. Actions
+Its responsibilities include:
 
-Actions are defined abstractly.
+- parsing the configuration file
+- validating syntax
+- validating semantic correctness
+- checking submenu references
+- rejecting invalid configurations early
 
-An action consists of:
-- A unique identifier
-- Optional parameters
+The loader is intentionally strict. Invalid configurations cause immediate failure with clear, line-numbered error messages.
 
-The Core only knows the identifier.
-Execution happens entirely within the platform context.
+This strictness avoids undefined behaviour at runtime and makes configuration errors easy to diagnose.
 
-Examples:
-- Embedded: toggle GPIO, read a sensor
-- Terminal: execute a script or command
+## Adapters
 
-Actions are replaceable and testable.
+Adapters connect the core to a concrete environment.
 
----
+Typical adapter responsibilities include:
 
-## 4. Configuration
+- reading user input
+- rendering menus
+- displaying actions and informational messages
+- defining runtime policies
 
-Menu structures are fully data-driven.
+Adapters are free to interpret the core state in any way appropriate for the platform, for example:
 
-Configuration data defines:
-- Menu titles
-- Menu entries
-- Assigned action identifiers
-- Optional submenus
+- terminal rendering
+- serial console output
+- graphical displays
+- remote interfaces
 
-Configuration explicitly contains:
-- No logic
-- No platform knowledge
-- No execution semantics
+The adapter is also the correct place for policy decisions.
 
-One configuration format applies to all platforms.
+## Exit Policy
 
-The concrete format is intentionally defined **after**
-the architectural decision.
+Automenu distinguishes between two exit mechanisms:
 
----
+- Soft Exit  
+  Triggered by a menu item of type `exit`.  
+  This is part of the menu model and handled by the core.
 
-## Explicit Non-Goals for v0.1.0
+- Hard Exit  
+  Triggered by a secret key sequence (for example `.q`).  
+  This is **not** part of the menu model and is handled exclusively by the adapter.
 
-Automenu v0.1.0 is intentionally **not**:
-- An emulator of historical systems
-- A GUI framework
-- A web frontend
-- A cloud-dependent system
-- A scripting language
+Hard exit support is controlled at compile time and can be enabled or disabled depending on the target environment.
 
-These may be added later via adapters,
-but they are not part of the Core.
+This separation allows the same codebase to support both open development systems and locked-down kiosk or embedded systems.
 
----
+## Action Dispatcher
 
-## Status
+The action dispatcher is the only component that assigns meaning to action identifiers.
 
-Version v0.1.0 is considered architecturally frozen when:
-- Core, adapters and actions are strictly separated
-- At least one adapter is implemented
-- No platform-specific logic exists in the Core
+It maps string-based action IDs to concrete behaviour.
 
+By design:
+
+- the core does not know what an action does
+- the configuration only references action IDs
+- the dispatcher defines behaviour explicitly
+
+This keeps the core neutral and allows different platforms to implement actions differently without changing the menu logic.
+
+## Determinism and Testability
+
+Because the core is isolated from IO and platform details, it can be tested independently.
+
+Given the same initial state and the same sequence of input events, the core will always produce the same result.
+
+This property is essential for:
+
+- embedded systems
+- long-running kiosk applications
+- safety-relevant environments
+- reproducible debugging
+
+## Version Status
+
+The architecture described in this document corresponds to **Automenu v0.1.0**.
+
+The core architecture is considered stable and frozen. Future extensions are expected to build on this foundation without breaking the existing design principles.
